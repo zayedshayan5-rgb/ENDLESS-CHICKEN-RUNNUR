@@ -108,13 +108,13 @@ function draw(){
     ctx.fillStyle = "green";
     ctx.fillRect(0,170,350,30);
 
-    ctx.fillStyle = "yellow";
-    ctx.fillRect(
-        chicken.x,
-        chicken.y,
-        chicken.width,
-        chicken.height
-    );
+    ctx.drawImage(
+    chickenImg,
+    chicken.x,
+    chicken.y,
+    chicken.width,
+    chicken.height
+);
 
     ctx.fillStyle = "red";
     ctx.fillRect(
