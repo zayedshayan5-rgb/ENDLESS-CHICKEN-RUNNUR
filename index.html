@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Chicken Runner</title>
+
+<style>
+body{
+    margin:0;
+    text-align:center;
+    background:lightblue;
+    font-family:Arial,sans-serif;
+}
+
+h1{
+    color:darkgreen;
+}
+
+canvas{
+    background:white;
+    border:3px solid black;
+}
+</style>
+
+</head>
+<body>
+
+<h1>🐔 Chicken Runner</h1>
+
+<canvas id="game" width="350" height="200"></canvas>
+
+<script>
+const canvas = document.getElementById("game");
+const ctx = canvas.getContext("2d");
+
+let chicken = {
+    x:50,
+    y:140,
+    width:30,
+    height:30,
+    velocityY:0,
+    jumping:false
+};
+
+let obstacle = {
+    x:350,
+    y:140,
+    width:25,
+    height:30
+};
+
+let score = 0;
+let gameOver = false;
+
+function jump(){
+    if(!chicken.jumping){
+        chicken.velocityY = -10;
+        chicken.jumping = true;
+    }
+}
+
+document.addEventListener("click", jump);
+
+document.addEventListener("keydown", function(e){
+    if(e.code === "Space"){
+        jump();
+    }
+});
+
+function update(){
+
+    if(gameOver) return;
+
+    chicken.y += chicken.velocityY;
+    chicken.velocityY += 0.5;
+
+    if(chicken.y >= 140){
+        chicken.y = 140;
+        chicken.velocityY = 0;
+        chicken.jumping = false;
+    }
+
+    obstacle.x -= 4;
+
+    if(obstacle.x < -30){
+        obstacle.x = 350;
+        score++;
+    }
+
+    if(
+        chicken.x < obstacle.x + obstacle.width &&
+        chicken.x + chicken.width > obstacle.x &&
+        chicken.y < obstacle.y + obstacle.height &&
+        chicken.y + chicken.height > obstacle.y
+    ){
+        gameOver = true;
+    }
+}
+
+function draw(){
+
+    ctx.clearRect(0,0,canvas.width,canvas.height);
+
+    ctx.fillStyle = "green";
+    ctx.fillRect(0,170,350,30);
+
+    ctx.fillStyle = "yellow";
+    ctx.fillRect(
+        chicken.x,
+        chicken.y,
+        chicken.width,
+        chicken.height
+    );
+
+    ctx.fillStyle = "red";
+    ctx.fillRect(
+        obstacle.x,
+        obstacle.y,
+        obstacle.width,
+        obstacle.height
+    );
+
+    ctx.fillStyle = "black";
+    ctx.font = "20px Arial";
+    ctx.fillText("Score: " + score,10,25);
+
+    if(gameOver){
+        ctx.font = "30px Arial";
+        ctx.fillText("GAME OVER",70,100);
+    }
+}
+
+function gameLoop(){
+    update();
+    draw();
+    requestAnimationFrame(gameLoop);
+}
+
+gameLoop();
+</script>
+
+</body>
+</html>
