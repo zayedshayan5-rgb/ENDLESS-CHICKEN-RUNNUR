@@ -1,109 +1,184 @@
-<!DOCTYPE html>
-<html>
+<!DOCTYPE html><html lang="en">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>Chicken Runner</title>
-<style>
-body{
- margin:0;
- text-align:center;
- background:lightblue;
- font-family:Arial,sans-serif;
-}
-h1{ color:darkgreen; }
-canvas{
- background:white;
- border:3px solid black;
-}
-</style>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Endless Chicken Runner - Dino Style</title>
+  <style>
+    body {
+      margin: 0;
+      overflow: hidden;
+      background: linear-gradient(#cfefff, #ffffff);
+      font-family: sans-serif;
+      text-align: center;
+    }
+    canvas {
+      display: block;
+      margin: 0 auto;
+      background: #e6f7ff;
+      border-bottom: 3px solid #333;
+    }
+    #ui {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      font-size: 18px;
+      background: rgba(255,255,255,0.7);
+      padding: 6px 10px;
+      border-radius: 8px;
+    }
+  </style>
 </head>
 <body>
-<h1>■ Chicken Runner</h1>
-<canvas id="game" width="350" height="200"></canvas>
-<script>
-const canvas = document.getElementById("game");
-const ctx = canvas.getContext("2d");
-const chickenImg = new Image();
-chickenImg.src = "chicken.png";
-const obstacleImg = new Image();
-obstacleImg.src = "rock.png";
-let chicken = {
- x:50,y:140,width:40,height:40,
- velocityY:0,jumping:false
-};
-let obstacle = {
- x:350,y:140,width:35,height:35
-};
-let score = 0;
-let gameOver = false;
-function jump(){
- if(!chicken.jumping){
- chicken.velocityY = -10;
- chicken.jumping = true;
- }
-}
-function restartGame(){
- chicken.y = 140;
- chicken.velocityY = 0;
- chicken.jumping = false;
- obstacle.x = 350;
- score = 0;
- gameOver = false;
-}
-document.addEventListener("click", function(){
- if(gameOver){ restartGame(); }
- else{ jump(); }
-});
-document.addEventListener("keydown", function(e){
- if(e.code === "Space"){
- if(gameOver){ restartGame(); }
- else{ jump(); }
- }});
-function update(){
- if(gameOver) return;
- chicken.y += chicken.velocityY;
- chicken.velocityY += 0.5;
- if(chicken.y >= 140){
- chicken.y = 140;
- chicken.velocityY = 0;
- chicken.jumping = false;
- }
- obstacle.x -= 4;
- if(obstacle.x < -40){
- obstacle.x = 350;
- score++;
- }
- if(
- chicken.x < obstacle.x + obstacle.width &&
- chicken.x + chicken.width > obstacle.x &&
- chicken.y < obstacle.y + obstacle.height &&
- chicken.y + chicken.height > obstacle.y
- ){
- gameOver = true;
- }
-}
-function draw(){
- ctx.clearRect(0,0,canvas.width,canvas.height);
- ctx.fillStyle = "green";
- ctx.fillRect(0,170,350,30);
- ctx.drawImage(chickenImg,chicken.x,chicken.y,chicken.width,chicken.height);
- ctx.drawImage(obstacleImg,obstacle.x,obstacle.y,obstacle.width,obstacle.height);
- ctx.fillStyle = "black";
- ctx.font = "20px Arial";
- ctx.fillText("Score: " + score,10,25);
- if(gameOver){
- ctx.font = "25px Arial";
- ctx.fillText("GAME OVER",80,90);
- ctx.fillText("TAP TO RESTART",50,130);
- }
-}
-function gameLoop(){
- update();
- draw();
- requestAnimationFrame(gameLoop);
-}
-gameLoop();
-</script>
-</body>
+  <div id="ui">Score: 0 | Speed: 6</div>
+  <canvas id="game" width="900" height="400"></canvas>  <script>
+    const canvas = document.getElementById("game");
+    const ctx = canvas.getContext("2d");
+    const ui = document.getElementById("ui");
+
+    const chickenImg = new Image();
+    chickenImg.src = "chicken.png";
+
+    const rockImg = new Image();
+    rockImg.src = "rock.png";
+
+    let groundY = 320;
+
+    let chicken = {
+      x: 80,
+      y: groundY,
+      w: 50,
+      h: 50,
+      vy: 0,
+      jumping: false
+    };
+
+    let gravity = 0.8;
+    let obstacles = [];
+    let frame = 0;
+    let score = 0;
+    let speed = 6;
+    let gameOver = false;
+
+    function spawnObstacle() {
+      const type = Math.random() > 0.5 ? "rock" : "rock";
+      obstacles.push({
+        x: canvas.width,
+        y: groundY + 10,
+        w: 40,
+        h: 40,
+        speed: speed
+      });
+    }
+
+    function resetGame() {
+      obstacles = [];
+      score = 0;
+      speed = 6;
+      frame = 0;
+      chicken.y = groundY;
+      chicken.vy = 0;
+      gameOver = false;
+      loop();
+    }
+
+    function update() {
+      if (gameOver) return;
+
+      frame++;
+      score++;
+
+      if (score % 200 === 0) speed += 0.5;
+
+      ui.innerText = `Score: ${Math.floor(score / 5)} | Speed: ${speed.toFixed(1)}`;
+
+      chicken.vy += gravity;
+      chicken.y += chicken.vy;
+
+      if (chicken.y > groundY) {
+        chicken.y = groundY;
+        chicken.vy = 0;
+        chicken.jumping = false;
+      }
+
+      if (frame % 80 === 0) spawnObstacle();
+
+      for (let o of obstacles) {
+        o.x -= o.speed;
+
+        if (
+          chicken.x < o.x + o.w &&
+          chicken.x + chicken.w > o.x &&
+          chicken.y < o.y + o.h &&
+          chicken.y + chicken.h > o.y
+        ) {
+          gameOver = true;
+        }
+      }
+
+      obstacles = obstacles.filter(o => o.x + o.w > 0);
+    }
+
+    function draw() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      // ground
+      ctx.fillStyle = "#6bbf59";
+      ctx.fillRect(0, groundY + 30, canvas.width, 100);
+
+      // chicken
+      if (chickenImg.complete) {
+        ctx.drawImage(chickenImg, chicken.x, chicken.y, chicken.w, chicken.h);
+      } else {
+        ctx.fillStyle = "yellow";
+        ctx.fillRect(chicken.x, chicken.y, chicken.w, chicken.h);
+      }
+
+      // obstacles
+      for (let o of obstacles) {
+        if (rockImg.complete) {
+          ctx.drawImage(rockImg, o.x, o.y, o.w, o.h);
+        } else {
+          ctx.fillStyle = "gray";
+          ctx.fillRect(o.x, o.y, o.w, o.h);
+        }
+      }
+
+      if (gameOver) {
+        ctx.fillStyle = "black";
+        ctx.font = "50px Arial";
+        ctx.fillText("GAME OVER", 300, 180);
+        ctx.font = "20px Arial";
+        ctx.fillText("Press R to Restart", 320, 220);
+      }
+    }
+
+    function loop() {
+      update();
+      draw();
+      if (!gameOver) requestAnimationFrame(loop);
+    }
+
+    document.addEventListener("keydown", (e) => {
+      if (e.code === "Space") {
+        if (!chicken.jumping) {
+          chicken.vy = -14;
+          chicken.jumping = true;
+        }
+      }
+
+      if (e.code === "KeyR" && gameOver) {
+        resetGame();
+      }
+    });
+
+    // mobile tap
+    document.addEventListener("touchstart", () => {
+      if (!chicken.jumping) {
+        chicken.vy = -14;
+        chicken.jumping = true;
+      }
+    });
+
+    loop();
+  </script></body>
 </html>
